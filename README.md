@@ -53,7 +53,7 @@ ORDERS="1 3" ./run_gadgets.sh              # run a subset
 Each line reports the routine, its median, the order, and the trial count:
 
 ```
-  COMFiZ             33.46us   (order 1, median of 10000 runs)
+  COMFiZ             41.46us   (order 1, median of 10000 runs)
 ```
 
 The trial count is `ITER` in `utils.h`. At the default of 10000 a full run over five orders takes several minutes, dominated by BPTBC24 at the higher orders. `ITER` = 100000 was used to get the timings given in the paper.
