@@ -1,6 +1,6 @@
 # COMFiZ
 
-Artifact for **COMFiZ: CORDIC-based Masked Fixed-point SamplerZ**. It contains the COMFiZ implementation, the BPTBC24 implementation it is compared against, the benchmark drivers, and the scripts that certify the error analysis.
+Artifact for **COMFiZ: CORDIC-based Masked Fixed-point SamplerZ**. It contains the COMFiZ implementation, the BPTBC24 implementation it is compared against, the benchmark drivers, and a SageMath script to certify the error analysis.
 
 ## Layout
 
