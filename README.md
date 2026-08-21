@@ -34,8 +34,7 @@ Requires CMake 3.13 or later and a C99 compiler.
 
 ```
 chmod +x run_samplers.sh run_gadgets.sh
-cmake -B build
-cmake --build build -j
+cmake -B build && cmake --build build -j
 ./run_samplers.sh
 ./run_gadgets.sh
 ```
