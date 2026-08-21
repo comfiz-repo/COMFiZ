@@ -3,7 +3,7 @@
 
 #include <stdint.h> //integer type
 
-#define ITER 100000
+#define ITER 10000
 
 uint64_t rand64(void);
 uint64_t randmod(uint64_t mod);
