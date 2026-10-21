@@ -38,8 +38,8 @@ int main(void) {
     double runs[ITER];
     size_t j;
 
-    srand((unsigned int)time(NULL));
-
+    // Inputs are binary64 encodings: mu in [0, 10000) and sigma' in Falcon-512's
+    // range [sigma_min, sigma_max]. Their masking is outside the timed region.
     for (j = 0; j < ITER; j++){
         MaskB(in1, (rand64()%0x40C3880000000000));
         MaskB(in2, ((rand64()%2443951759977325) + 0x3FF47201BF2577E7));

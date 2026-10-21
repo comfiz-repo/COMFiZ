@@ -5,11 +5,10 @@
 #include <time.h>
 #include <math.h>
 
-// Exactly one gadget is compiled at a time, so no two routines are ever timed
-// in one process. The build system supplies the directive.
-#if (defined(BENCH_SECFXPINV) + defined(BENCH_SECFXPEXP) + defined(BENCH_SECFXPBEREXP) \
-   + defined(BENCH_SECFPRINVNR) + defined(BENCH_SECAPPROXEXP) \
-   + defined(BENCH_SECFPRBEREXP)) != 1
+// Exactly one gadget is timed per binary.
+#if (defined(BENCH_SECFXPINV) + defined(BENCH_SECFXPEXP) + defined(BENCH_SECFXPPOLYEXP) \
+   + defined(BENCH_SECFXPPOLYEXPQ) + defined(BENCH_SECFXPBEREXP) + defined(BENCH_SECFPRINVNR) \
+   + defined(BENCH_SECAPPROXEXP) + defined(BENCH_SECFPRBEREXP)) != 1
 #error "define exactly one BENCH_ directive"
 #endif
 
@@ -31,15 +30,17 @@
 
 // Input ranges. x is the reduced exponential argument in [0, ln2), xb the
 // BerExp argument over the whole supported interval, sigma Falcon-512's range
-// and ccs = sigma_min/sigma. ccsK = ccs/K is the CORDIC initializer.
+// and ccs = sigma_min/sigma. ccsK = ccs/K is the CORDIC initializer, ccs in Q63
+// is the polynomial's.
 #define LN2_D       0.6931471805599453
 #define SIGMA_MIN_D 1.2778336969128337
 #define B_X_D       61.66
 #define INV_K_D     1.207497067763072
 #define TWO_P54     18014398509481984.0
 #define TWO_P62     4611686018427387904.0
+#define TWO_P63     9223372036854775808.0
 
-// Uniform draw in [0,1) from the top 53 bits of the reference generator.
+// Uniform draw in [0,1) from the top 53 bits of the generator.
 static inline double unit(void) {
     return (double)(rand64() >> 11) / 9007199254740992.0;
 }
@@ -122,6 +123,35 @@ static double bench(void) {
     return calc_median(runs);
 }
 
+#elif defined(BENCH_SECFXPPOLYEXP) || defined(BENCH_SECFXPPOLYEXPQ)
+// Falcon's fixed-point ApproxExp, with the B2A of CHES 2017 or of CHES 2014
+#ifdef BENCH_SECFXPPOLYEXP
+#define BENCH_NAME "SecFxpPolyExp"
+#define POLY_EXP   SecFxpPolyExp
+#else
+#define BENCH_NAME "SecFxpPolyExpQ"
+#define POLY_EXP   SecFxpPolyExpQuad
+#endif
+static double bench(void) {
+    maskedb_t out1, a1, a2;
+    struct timespec t0, t1;
+    double runs[ITER];
+    size_t j;
+
+    for (j = 0; j < ITER; j++) {
+        const double ccs_d = ccs(sigma_bits());
+        MaskB(a1, (uint64_t)(LN2_D * unit() * TWO_P62));
+        MaskB(a2, (uint64_t)(ccs_d * TWO_P63));
+
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t0);
+        POLY_EXP(out1, a1, a2);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
+
+        runs[j] = elapsed(t0, t1);
+    }
+    return calc_median(runs);
+}
+
 #elif defined(BENCH_SECAPPROXEXP)
 #define BENCH_NAME "SecApproxExp"
 static double bench(void) {
@@ -191,8 +221,6 @@ static double bench(void) {
 #endif
 
 int main(void) {
-    srand((unsigned int)time(NULL));
-
     printf("  %-14s %9.2fus   (order %u, median of %d runs)\n",
            BENCH_NAME, bench(), (unsigned)MASKORDER, ITER);
 
