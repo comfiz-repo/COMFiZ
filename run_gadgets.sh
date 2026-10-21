@@ -13,6 +13,7 @@ echo "Masked Gadgets"
 echo
 for d in $orders; do
     for t in ${*:-bench_secfxpexp bench_secapproxexp \
+                  bench_secfxppolyexp bench_secfxppolyexpq \
                   bench_secfxpinv bench_secfprinvnr \
                   bench_secfxpberexp bench_secfprberexp}; do
         [ -x "./${t}_d${d}" ] && ./"${t}_d${d}"

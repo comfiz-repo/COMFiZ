@@ -5,10 +5,12 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(MASKORDERS 1 2 3 4 5 CACHE STRING "masking orders to build")
+set(ITER 10000 CACHE STRING "timed runs per benchmark binary")
 
 add_compile_options(-O3
     -ftrapv -fstack-protector-strong -Wall -Wextra -Wpedantic
     -Wconversion -Wsign-conversion -Wformat=2 -Wvla -Winit-self)
+add_compile_definitions(ITER=${ITER})
 
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(FALSE_POSITIVES "-Wno-maybe-uninitialized;-Wno-stringop-overflow")
@@ -24,6 +26,8 @@ function(bench name lib src)
     target_compile_definitions(${name} PRIVATE ${ARGN})
     target_link_libraries(${name} ${lib} m)
 endfunction()
+
+enable_testing()
 
 foreach(d IN LISTS MASKORDERS)
     add_library(comfiz_gadgets_d${d} SHARED ${COMFIZ_SRC})
@@ -46,8 +50,9 @@ foreach(d IN LISTS MASKORDERS)
     bench(bptbc24_d${d}    bptbc24_gadgets_d${d}    apps/main.c SAMPLER_BPTBC24)
     bench(bptbc24_nr_d${d} bptbc24_nr_gadgets_d${d} apps/main.c SAMPLER_BPTBC24 BPTBC24_NR)
 
-    # gadgets, in the order the scripts run them: the reciprocal, the exponential, then BerExp
-    foreach(g SECFXPINV SECFXPEXP SECFXPBEREXP)
+    # gadgets, in the order the scripts run them: the reciprocal, the exponential
+    # with its two fixed-point polynomial baselines, then BerExp
+    foreach(g SECFXPINV SECFXPEXP SECFXPPOLYEXP SECFXPPOLYEXPQ SECFXPBEREXP)
         string(TOLOWER ${g} gl)
         bench(bench_${gl}_d${d} comfiz_gadgets_d${d} apps/bench_gadgets_main.c BENCH_${g})
     endforeach()
@@ -55,4 +60,8 @@ foreach(d IN LISTS MASKORDERS)
         string(TOLOWER ${g} gl)
         bench(bench_${gl}_d${d} bptbc24_gadgets_d${d} apps/bench_gadgets_main.c BENCH_${g})
     endforeach()
+
+    # correctness checks against unmasked references
+    bench(test_comfiz_d${d} comfiz_gadgets_d${d} apps/test_comfiz.c)
+    add_test(NAME comfiz_d${d} COMMAND test_comfiz_d${d})
 endforeach()
