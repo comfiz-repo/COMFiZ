@@ -8,7 +8,7 @@ Artifact for **COMFiZ: CORDIC-based Masked Fixed-point SamplerZ**. It contains t
 - **Cryptographic RNG.** Every random word in both implementations comes from ChaCha20, the PRNG of Falcon's reference implementation, seeded from `/dev/urandom`. All timings include its cost.
 - **Faster CORDIC exponential.** `SecFxpExp` uses 85 `SecAdd` calls instead of 126: from index 21 on, the angles are powers of two, so the rotation directions are read from the bits of the residual angle. Its output is bit-identical to the previous version.
 - **Polynomial baselines.** Falcon's fixed-point `ApproxExp`, masked with `SecMult128` and exact A2B/B2A truncations, with the B2A of Coron (CHES 2017) or of Coron, Großschädl and Vadnala (CHES 2014).
-- **New scripts.** `compare_exp.sh` compares CORDIC with both baselines, and `run_count_rng.sh` counts random words and measures the share of time spent generating them.
+- **New scripts.** `compare_exp.sh` compares CORDIC with both baselines, and `run_count_rng.sh` counts the random words each sampler draws.
 
 ## Layout
 
@@ -32,20 +32,20 @@ Artifact for **COMFiZ: CORDIC-based Masked Fixed-point SamplerZ**. It contains t
 | `apps/main.c` | Whole-sampler driver; a `SAMPLER_` directive selects which sampler the binary times |
 | `apps/bench_gadgets_main.c` | Gadget driver; a `BENCH_` directive selects which routine the binary times |
 | `apps/test_comfiz.c` | Correctness tests: each masked gadget is unmasked and compared with an unmasked reference |
-| `apps/count_rng.c` | Counts the random words drawn inside one sampler call and times the call |
+| `apps/count_rng.c` | Counts the random words drawn inside one sampler call |
 | `verify/comfiz_verify.sage` | Certification of the instantiation: constant rounding, the bounds of Section 4, the conditions of Corollary 2, and a simulation checked against them |
 | `CMakeLists.txt` | Builds one shared library per implementation per masking order, one executable per routine, and the tests |
 | `run_samplers.sh` | Runs each sampler, one process each, at every order built |
 | `run_gadgets.sh` | Runs each gadget, one process each, counterparts adjacent, at every order built |
 | `compare_exp.sh` | Times CORDIC against both polynomial baselines at every order built |
-| `run_count_rng.sh` | Builds each sampler with a counting generator and reports random words and the time spent generating them |
+| `run_count_rng.sh` | Builds each sampler with a counting generator and reports the random words it draws |
 
 ## Building and running
 
 Requires CMake 3.13 or later and a C99 compiler.
 
 ```
-chmod +x run_samplers.sh run_gadgets.sh compare_exp.sh
+chmod +x run_samplers.sh run_gadgets.sh compare_exp.sh run_count_rng.sh
 cmake -B build
 cmake --build build -j
 (cd build && ctest)
@@ -105,7 +105,7 @@ bash run_count_rng.sh 1000
 ORDERS="1 3" bash run_count_rng.sh 500
 ```
 
-`run_count_rng.sh` builds each sampler twice with `-DCOUNT_RNG`, outside CMake. It reports the mean number of 64-bit words drawn per sampler call, the ratio to COMFiZ, the mean time with ChaCha20, the mean time with the near-free generator splitmix64, and the share of time spent generating randomness. The masking of the inputs is excluded. Exact totals are written to `build_count_rng/rand64_counts.csv`. The splitmix64 build (`-DINSECURE_FAST_RNG`) is not cryptographic and only serves to time the rest of the computation; never use it otherwise.
+`run_count_rng.sh` builds each sampler with `-DCOUNT_RNG`, outside CMake, and reports the mean number of 64-bit words drawn per sampler call and the ratio to COMFiZ. The masking of the inputs is excluded. Exact totals and the minimum and maximum per call are written to `build_count_rng/rand64_counts.csv`.
 
 ## Verification
 The SageMath script checks that every stored constant is correctly rounded, evaluates the bounds of Section 4 and the two conditions of Corollary 2, then simulates the pipeline and compares the observed errors with those bounds. It takes about a minute and every line should read `True` or `yes`. The checks are done with the fixed-point quantities exact over `QQ` and the transcendental ones in `RealField(200)`. Start Sage in the `verify` directory and load it:
