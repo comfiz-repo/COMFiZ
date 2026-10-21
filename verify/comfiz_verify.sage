@@ -331,7 +331,6 @@ for k in ['eps_inv','eps_ccs','eps_g','eps_x','eps_red','eps_cordic','eps_Ber',
     print(" %-11s %12s %12s %5s" % (k, fmt(obs[k]), fmt(bnd[k]),
                                     "yes" if obs[k] <= bnd[k] else "NO"))
 
-# the sweep never reaches the saturating branch, so it is exercised directly:
 # ccs = 1 together with a negative reduced exponent drives W_n past 2^62
 W0_one = nearest(R(2)^62/K)
 Wsat = SecFxpExp(-(1 << 40), W0_one)
