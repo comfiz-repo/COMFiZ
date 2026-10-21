@@ -655,3 +655,39 @@ void B2A128(maskeda_t outup, maskeda_t outdown, maskedb_t inup, maskedb_t indown
         }
     B2Aext128(outup,outdown,extendedup,extendeddown,size);
 }
+
+// Boolean to arithmetic masking mod 2^128 in O(n^2 log w), after Coron, Grosschadl
+// and Vadnala (CHES 2014). B2A128 above (Coron, CHES 2017) is faster for few shares
+// but makes two recursive calls on size - 1 shares, so its cost grows like 2^size.
+// Shares 1..size-1 of the output are fresh random values; share 0 is the input
+// minus their sum, computed on Boolean shares with A2B128 and SecAdd128, then
+// refreshed and recombined. It is uniform, so recombining it reveals nothing.
+// The outputs must not alias the inputs.
+void B2A128Quad(maskeda_t outup, maskeda_t outdown, maskedb_t inup, maskedb_t indown, size_t size){
+    uint64_t rh[MASKSIZE], rl[MASKSIZE], yh[MASKSIZE], yl[MASKSIZE], sh[MASKSIZE], sl[MASKSIZE];
+    size_t j;
+
+    // (0, -A_1, ..., -A_{size-1}) is an arithmetic sharing of -(A_1 + ... + A_{size-1})
+    rh[0] = 0;
+    rl[0] = 0;
+    for (j = 1; j < size; j++) {
+        outup[j] = rand64();
+        outdown[j] = rand64();
+        rl[j] = 0ULL - outdown[j];
+        rh[j] = ~outup[j] + (uint64_t)(outdown[j] == 0);
+    }
+    A2B128(yh, yl, rh, rl, size);
+
+    // Boolean shares of in - (A_1 + ... + A_{size-1}) mod 2^128
+    SecAdd128(sh, sl, yh, yl, inup, indown, size);
+
+    // refresh, then recombine into share 0
+    RefreshXOR_64(sh, sh, size);
+    RefreshXOR_64(sl, sl, size);
+    outup[0] = 0;
+    outdown[0] = 0;
+    for (j = 0; j < size; j++) {
+        outup[0] ^= sh[j];
+        outdown[0] ^= sl[j];
+    }
+}

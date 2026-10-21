@@ -43,5 +43,6 @@ void SecAdd128(uint64_t *out1,uint64_t *out, uint64_t *ina1,uint64_t *ina, uint6
 
 void A2B128(uint64_t *out1,uint64_t *out2, uint64_t *in1, uint64_t *in2, size_t size);
 void B2A128(maskeda_t outup, maskeda_t outdown, maskedb_t inup, maskedb_t indown, size_t size);
+void B2A128Quad(maskeda_t outup, maskeda_t outdown, maskedb_t inup, maskedb_t indown, size_t size);
 
 #endif

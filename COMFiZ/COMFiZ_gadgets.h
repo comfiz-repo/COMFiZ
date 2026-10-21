@@ -17,9 +17,16 @@ void SecFprIrsh128(maskedb_t out_bh, maskedb_t out_bl, maskedb_t in_bh, maskedb_
 void SecFprToInt128(maskedb_t mu_floor, maskedb_t mu_frac_q54, maskedb_t mu_fpr);
 void SecCondAddSub(maskedb_t out, maskedb_t a, maskedb_t v, maskedb_t M);
 
-void BaseSampler_(maskedb_t z, uint64_t *corr_h, uint64_t *corr_l);
+void SampleUniformB(maskedb_t out);
+void SecBaseSamplerFromUniform(maskedb_t z, maskeda_t corr_h, maskeda_t corr_l,
+                               maskedb_t u_hi, maskedb_t u_lo, maskedb_t beta);
+void BaseSampler_(maskedb_t z, maskeda_t corr_h, maskeda_t corr_l);
 void SecFxpInv(maskedb_t isig_q62, maskedb_t sigma_fpr);
 void SecFxpExp(maskedb_t prob_q62, maskedb_t x_q62, maskedb_t ccsK_q62);
 uint64_t SecFxpBerExp(maskedb_t accept, maskedb_t x_q54, maskedb_t ccsK_q62);
+
+// Baselines for the CORDIC comparison only; COMFiZ itself does not call them.
+void SecFxpPolyExp(maskedb_t prob_q62, maskedb_t x_q62, maskedb_t ccs_q63);
+void SecFxpPolyExpQuad(maskedb_t prob_q62, maskedb_t x_q62, maskedb_t ccs_q63);
 
 #endif

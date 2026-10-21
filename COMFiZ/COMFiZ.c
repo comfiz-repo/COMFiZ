@@ -36,9 +36,10 @@ void COMFiZ(maskedb_t sample, maskedb_t mu_fpr, maskedb_t sigma_fpr) {
         maskedb_t z, z_q54, delta_q54, sdel_q54, x_q54, sgn_bh;
         maskedb_t prod_bh, prod_bl;
         maskeda_t op_ah, op_al, prod_ah, prod_al;
-        uint64_t corr_h, corr_l, borrow;
+        maskeda_t corr_h, corr_l;
 
-        BaseSampler_(z, &corr_h, &corr_l);
+        // z and the correction C(z0) come out masked; only the acceptance bit is public
+        BaseSampler_(z, corr_h, corr_l);
 
         // delta = z - mu_frac in Q54
         for (i = 0; i < MASKSIZE; i++) z_q54[i] = z[i] << 54;
@@ -57,9 +58,12 @@ void COMFiZ(maskedb_t sample, maskedb_t mu_fpr, maskedb_t sigma_fpr) {
         B2A128(op_ah, op_al, sgn_bh, sdel_q54, MASKSIZE);
         SecSqr128(prod_ah, prod_al, op_ah, op_al);
 
-        borrow = (uint64_t)(prod_al[0] < corr_l);
-        prod_ah[0] = prod_ah[0] - corr_h - borrow;
-        prod_al[0] = prod_al[0] - corr_l;
+        // x = prod - C(z0): share-wise 128-bit subtraction of the masked correction
+        for (i = 0; i < MASKSIZE; i++) {
+            const uint64_t borrow = (uint64_t)(prod_al[i] < corr_l[i]);
+            prod_ah[i] = prod_ah[i] - corr_h[i] - borrow;
+            prod_al[i] = prod_al[i] - corr_l[i];
+        }
 
         A2B128(prod_bh, prod_bl, prod_ah, prod_al, MASKSIZE);
 
