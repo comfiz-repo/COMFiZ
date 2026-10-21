@@ -47,8 +47,6 @@ double calc_median(double values[ITER]) {
 // Windows). Every random word used by both samplers comes from it.
 //
 // COUNT_RNG counts the calls in rand64_calls (used by apps/count_rng.c).
-// INSECURE_FAST_RNG replaces ChaCha20 by splitmix64. It is NOT cryptographic and
-// only serves to measure the run time spent outside random number generation.
 //----------------------------------------------------------------------------------------
 
 #ifdef COUNT_RNG
@@ -58,21 +56,6 @@ uint64_t rand64_calls = 0;
 #define COUNT_RAND64() ((void)0)
 #endif
 
-#ifdef INSECURE_FAST_RNG
-
-uint64_t rand64(void)
-{
-    static uint64_t state = 0x9E3779B97F4A7C15ULL;
-    uint64_t z;
-
-    COUNT_RAND64();
-    z = (state += 0x9E3779B97F4A7C15ULL);
-    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
-    z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
-    return z ^ (z >> 31);
-}
-
-#else
 
 #if defined(_WIN32)
 #define FALCON_RAND_WIN32 1
@@ -303,7 +286,6 @@ uint64_t rand64(void)
 #undef FALCON_RAND_WIN32
 #undef FALCON_RAND_URANDOM
 
-#endif // INSECURE_FAST_RNG
 
 // Uniform value in [0, mod) by rejection, drawn through rand64; mod = 0 means 2^64.
 uint64_t randmod(uint64_t ui64_mod)
